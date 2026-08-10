@@ -3,6 +3,11 @@
 # Run manually, or on a schedule via cron (see README.md for how to
 # set that up so this behaves like the ESP32's OTA updates - checking
 # periodically rather than needing you to SSH in every time).
+#
+# This lives inside a subfolder of the shared smart-dartboard-system
+# repo (also used by the ESP32 firmware) - git pull still operates on
+# the whole repo even run from a subfolder, which is fine: it'll also
+# pull firmware/ changes, the Pi just doesn't care about those files.
 
 set -e
 

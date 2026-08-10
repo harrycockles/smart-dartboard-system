@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/PiDartVision
-ExecStart=/usr/bin/python3 /home/pi/PiDartVision/server.py
+User=dartboard
+WorkingDirectory=/home/dartboard/smart-dartboard-system/pi-vision
+ExecStart=/usr/bin/python3 /home/dartboard/smart-dartboard-system/pi-vision/server.py
 Restart=on-failure
 RestartSec=5
 

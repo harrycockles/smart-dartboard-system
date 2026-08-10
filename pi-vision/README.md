@@ -72,43 +72,56 @@ real time between throws.
 without extra setup (binding port 80 needs root/special permissions),
 so "the IP" on its own won't work, you need the port too.
 
-## Setting up real OTA updates (not just the update.sh script existing)
+## Setting up real OTA updates, using your existing repo
 `update.sh` already does the actual update logic (git pull + restart),
 but it needs a real git repo on the Pi to pull from - if you got the
 code onto the Pi via `scp` earlier rather than `git clone`, there's no
-`.git` folder yet for it to work with. To wire this up properly:
+`.git` folder yet for it to work with. Since you're consolidating this
+into your existing `smart-dartboard-system` repo (the same one the
+ESP32 firmware's `firmware/` folder lives in), here's the walkthrough:
 
-**1. Push PiDartVision to a GitHub repo** (from your Chromebook):
+**1. Move this project into your existing repo, as a `pi-vision` folder**
+(from your Chromebook, wherever your existing repo is checked out):
 ```bash
-cd ~/PiDartVision
-git init
-git add .
-git commit -m "Initial commit"
-# create a new repo on github.com first, then:
-git remote add origin <your-repo-url>
-git push -u origin main
+cd ~/smart-dartboard-system      # your existing repo checkout
+cp -r ~/PiDartVision ./pi-vision
+git add pi-vision
+git commit -m "Add Pi vision system"
+git push origin main
 ```
+Your repo now has `firmware/` (the ESP32 side) and `pi-vision/` (this
+project) side by side.
 
-**2. Replace the scp'd copy on the Pi with a real git clone:**
+**2. On the Pi: remove the scp'd copy, clone the whole repo instead**
 ```bash
 ssh pi@dartpi.local
 rm -rf ~/PiDartVision
-git clone <your-repo-url> ~/PiDartVision
-cd ~/PiDartVision
+git clone https://github.com/harrycockles/smart-dartboard-system.git ~/smart-dartboard-system
+cd ~/smart-dartboard-system/pi-vision
 pip3 install -r requirements.txt
 ```
+You're cloning the *whole* repo (including `firmware/`), but the Pi
+only ever runs what's inside `pi-vision/` - the rest just comes along
+for the ride, harmlessly.
 
-**3. Set up the systemd service** (if you haven't already - see below)
+**3. Set up the systemd service** (paths already point at this
+`pi-vision` subfolder structure):
+```bash
+cd ~/smart-dartboard-system/pi-vision
+sudo cp dartboard-vision.service /etc/systemd/system/
+sudo systemctl enable dartboard-vision
+sudo systemctl start dartboard-vision
+sudo systemctl status dartboard-vision   # confirm it's actually running
+```
 
-**4. Add the cron job** so it checks automatically, same idea as the
-firmware's midnight OTA check:
+**4. Add the cron job**, same idea as the firmware's midnight OTA check:
 ```bash
 crontab -e
 # add this line:
-0 2 * * * /home/pi/PiDartVision/update.sh >> /home/pi/update.log 2>&1
+0 2 * * * /home/pi/smart-dartboard-system/pi-vision/update.sh >> /home/pi/update.log 2>&1
 ```
 
-From then on: push a change to GitHub from your Chromebook, and the
+From then on: push a change to `pi-vision/` on GitHub from your
 Pi picks it up automatically overnight (or run `./update.sh` manually
 on the Pi any time to check immediately).
 
